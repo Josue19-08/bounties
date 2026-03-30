@@ -26,10 +26,9 @@ import { toast } from "sonner";
 
 import { BountyFieldsFragment } from "@/lib/graphql/generated";
 import { StatusBadge, TypeBadge } from "./bounty-badges";
-import { useCancelBounty } from "@/hooks/use-bounty-mutations";
-import { EscrowService } from "@/lib/services/escrow";
 import { authClient } from "@/lib/auth-client";
 import type { CancellationRecord } from "@/types/escrow";
+import { useCancelBountyDialog } from "@/hooks/use-cancel-bounty-dialog";
 
 interface SidebarCTAProps {
   bounty: BountyFieldsFragment;
@@ -38,12 +37,16 @@ interface SidebarCTAProps {
 
 export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
   const [copied, setCopied] = useState(false);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-  const [isCancelling, setIsCancelling] = useState(false);
-
   const { data: session } = authClient.useSession();
-  const cancelBounty = useCancelBounty();
+
+  const {
+    cancelDialogOpen,
+    setCancelDialogOpen,
+    cancelReason,
+    setCancelReason,
+    isCancelling,
+    handleCancel,
+  } = useCancelBountyDialog(bounty.id, onCancelled);
 
   const canAct = bounty.status === "OPEN";
   const isCreator = session?.user?.id === bounty.createdBy;
@@ -57,40 +60,6 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // clipboard write failed
-    }
-  };
-
-  const handleCancel = async () => {
-    if (!cancelReason.trim()) {
-      toast.error("Please provide a reason for cancellation");
-      return;
-    }
-
-    setIsCancelling(true);
-    try {
-      // 1. Trigger escrow refund (simulates on-chain call)
-      const record = await EscrowService.cancelBounty(
-        bounty.id,
-        session?.user?.id ?? "",
-        cancelReason.trim(),
-      );
-
-      // 2. Update bounty status via GraphQL
-      cancelBounty.cancel({ id: bounty.id, reason: cancelReason.trim() });
-
-      toast.success("Bounty cancelled and refund initiated", {
-        description: `${record.refund?.refundedAmount ?? 0} ${record.refund?.asset ?? ""} refunded`,
-      });
-
-      onCancelled?.(record);
-      setCancelDialogOpen(false);
-      setCancelReason("");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to cancel bounty",
-      );
-    } finally {
-      setIsCancelling(false);
     }
   };
 
@@ -243,8 +212,7 @@ export function SidebarCTA({ bounty, onCancelled }: SidebarCTAProps) {
           <div className="space-y-3 mt-2">
             <div className="space-y-2">
               <Label htmlFor="cancel-reason" className="text-sm font-medium">
-                Reason for cancellation{" "}
-                <span className="text-red-400">*</span>
+                Reason for cancellation <span className="text-red-400">*</span>
               </Label>
               <Textarea
                 id="cancel-reason"
@@ -287,47 +255,21 @@ interface MobileCTAProps {
 }
 
 export function MobileCTA({ bounty, onCancelled }: MobileCTAProps) {
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-  const [isCancelling, setIsCancelling] = useState(false);
-
   const { data: session } = authClient.useSession();
-  const cancelBountyMutation = useCancelBounty();
+
+  const {
+    cancelDialogOpen,
+    setCancelDialogOpen,
+    cancelReason,
+    setCancelReason,
+    isCancelling,
+    handleCancel,
+  } = useCancelBountyDialog(bounty.id, onCancelled);
 
   const canAct = bounty.status === "OPEN";
   const isCreator = session?.user?.id === bounty.createdBy;
   const canCancel =
     isCreator && (bounty.status === "OPEN" || bounty.status === "IN_PROGRESS");
-
-  const handleCancel = async () => {
-    if (!cancelReason.trim()) {
-      toast.error("Please provide a reason for cancellation");
-      return;
-    }
-
-    setIsCancelling(true);
-    try {
-      const record = await EscrowService.cancelBounty(
-        bounty.id,
-        session?.user?.id ?? "",
-        cancelReason.trim(),
-      );
-      cancelBountyMutation.cancel({
-        id: bounty.id,
-        reason: cancelReason.trim(),
-      });
-      toast.success("Bounty cancelled and refund initiated");
-      onCancelled?.(record);
-      setCancelDialogOpen(false);
-      setCancelReason("");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to cancel bounty",
-      );
-    } finally {
-      setIsCancelling(false);
-    }
-  };
 
   const label = () => {
     if (!canAct) {

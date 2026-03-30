@@ -52,10 +52,10 @@ describe("EscrowService - Cancellation & Refund", () => {
   });
 
   describe("refundAll", () => {
-    it("should refund full amount for a partially released pool", async () => {
+    it("should refund remaining amount for a partially released pool", async () => {
       const result = await EscrowService.refundAll("2");
 
-      expect(result.refundedAmount).toBe(300); // totalAmount
+      expect(result.refundedAmount).toBe(150); // totalAmount - releasedAmount
       expect(result.asset).toBe("USDC");
       expect(result.status).toBe("completed");
       expect(result.transactionHash).toHaveLength(64);

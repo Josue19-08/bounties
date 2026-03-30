@@ -298,7 +298,7 @@ export function useCancelBounty() {
       options?: UpdateBountyMutateOptions,
     ) =>
       mutation.mutate(
-        { input: { id, status: "CANCELLED" } },
+        { input: { id, status: "CANCELLED", reason } as any },
         options,
       ),
     cancelAsync: (
@@ -306,7 +306,7 @@ export function useCancelBounty() {
       options?: UpdateBountyMutateOptions,
     ) =>
       mutation.mutateAsync(
-        { input: { id, status: "CANCELLED" } },
+        { input: { id, status: "CANCELLED", reason } as any },
         options,
       ),
   };

@@ -204,12 +204,11 @@ export class EscrowService {
     }
 
     const txHash = this.generateMockTxHash();
-    const refundedAmount = pool.totalAmount;
+    const refundedAmount = pool.totalAmount - pool.releasedAmount;
 
     this.pools[poolId] = {
       ...pool,
       isLocked: false,
-      releasedAmount: 0,
       status: "Refunded",
     };
 

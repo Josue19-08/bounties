@@ -12,6 +12,7 @@ import {
   Loader2,
   Copy,
   Check,
+  AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -83,7 +84,27 @@ export function RefundStatusTracker({
     );
   }
 
-  if (!cancellation?.refund) {
+  if (!cancellation) {
+    return (
+      <Card className="border-border/50 bg-background-card overflow-hidden">
+        <CardHeader className="border-b bg-muted/20 pb-4">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-base">Bounty Cancelled</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-5 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            This bounty was cancelled. Detailed refund and cancellation
+            information is currently unavailable.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!cancellation.refund) {
     return (
       <Card className="border-yellow-500/30 bg-yellow-500/5">
         <CardHeader className="pb-3">
@@ -97,7 +118,7 @@ export function RefundStatusTracker({
             This bounty was cancelled. Refund is being processed by the escrow
             contract.
           </p>
-          {cancellation?.reason && (
+          {cancellation.reason && (
             <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border/50">
               <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
                 Cancellation Reason
